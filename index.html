@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFriend</title>
+    <style>
+        /* 全局样式 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            background-color: #f4f5f7; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            color: #333; 
+            font-size: 16.5px; 
+        }
+
+        .container { 
+            background-color: white; 
+            padding: 40px 50px; 
+            border-radius: 12px; 
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* 阴影效果增强 */
+            border: 1px solid #e0e0e0; 
+            width: 100%; 
+            max-width: 1100px;
+            text-align: center; 
+            box-sizing: border-box; 
+            position: relative; 
+        }
+        .logo img { max-width: 160px; margin-bottom: 25px; opacity: 0.7; }
+        h1 { font-size: 2.2em; color: #172b4d; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .emoji { width: 45px; height: 45px; }
+
+        /* 欢迎页面样式 */
+        .welcome-page .intro-text { text-align: left; margin: 30px auto; max-width: 550px; line-height: 1.8; font-size: 1.2em; }
+        .features li { margin-bottom: 12px; }
+        .checkmark { color: #4CAF50; font-weight: bold; margin-right: 10px; }
+        .more-info { margin-top: 30px; color: #555; }
+        .action-button { display: inline-block; padding: 14px 35px; background-color: #fff; color: #333; text-decoration: none; border-radius: 5px; font-size: 1.2em; font-weight: bold; border: 2px solid #ccc; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; }
+        .action-button:hover { background-color: #f0f0f0; border-color: #bbb; }
+
+        /* 聊天页面样式 */
+        .chat-page { padding-bottom: 100px; } 
+        .main-content { display: flex; justify-content: space-between; align-items: flex-start; }
+        .chat-area { width: 55%; min-height: 420px; } 
+
+        /*  右侧思索区域整体放大放大 */
+        .explanation-area { 
+            width: 40%; 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            padding: 25px; 
+            text-align: left; 
+            box-sizing: border-box; 
+            font-size: 1.05em; 
+        }
+        .explanation-area h4 { margin-top: 0; color: #0052cc; border-bottom: 1px solid #ddd; padding-bottom: 12px; font-size: 1.2em; }
+        .explanation-area ul { padding-left: 20px; line-height: 1.8; }
+        .explanation-area ul li { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+
+        .message { 
+            padding: 18px 22px; 
+            border-radius: 12px; 
+            margin-bottom: 18px; 
+            max-width: 95%; 
+            text-align: left; 
+            line-height: 1.7; 
+            font-size: 1.1em; 
+            opacity: 0; 
+            transform: translateY(20px); 
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out; 
+        }
+        .message.visible { opacity: 1; transform: translateY(0); }
+        .user-message { background-color: #e6f7ff; border: 1px solid #91d5ff; }
+        .ai-message { background-color: #fffbe6; border: 1px solid #ffe58f; }
+        .message strong { display: block; margin-bottom: 8px; color: #555; font-size: 1.05em; }
+
+        /* 动画样式 */
+        .typing-indicator { height: 40px; display: flex; align-items: center; }
+        .typing-indicator span { height: 8px; width: 8px; background-color: #999; border-radius: 50%; display: inline-block; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        .typing-cursor { display: inline-block; width: 2px; height: 1.2em; background-color: #333; animation: blink-caret 0.75s step-end infinite; vertical-align: bottom; }
+        @keyframes blink-caret { from, to { background-color: transparent; } 50% { background-color: #333; } }
+
+        /* 底部控制区域 */
+        .footer-controls {
+            position: absolute;
+            bottom: 25px; 
+            left: 50px;
+            right: 50px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        /*  输入区域整体放大 */
+        .input-area {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 12px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+        }
+        .fixed-input { flex-grow: 1; padding: 12px 15px; background-color: #fff; border: 1px solid #ccc; border-radius: 5px; color: #333; text-align: left; font-size: 1.1em; }
+        .send-button { padding: 12px 25px; margin-left: 12px; border: 1px solid #ccc; background-color: #fff; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1em; }
+
+        /*  "下一段对话" 按钮 */
+        .next-topic-button {
+            padding: 14px 35px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-shrink: 0;
+        }
+        .next-topic-button:hover { background-color: #0056b3; }
+        .next-topic-button:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        /* 页面切换样式 */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 欢迎页面 -->
+    <div id="welcomePage" class="container welcome-page page active">
+        <div class="logo">
+            <img src="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/424af4f6f54b40379787cdfff2e2c2dd.png~tplv-a9rns2rl98-24:720:720.png?rcl=2025102621042138326C6E45EFD7AE3303&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1762088661&x-signature=AsbI5rg%2FtfgBe1%2FxxY2JXrYsMUk%3D" alt="SmartFriend Logo">
+        </div>
+        <h1>什么是SmartFriend? <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3268e23dc40f4cb992e6124c725b3230~tplv-a9rns2rl98-image.image?rcl=20251026205926A706DE5BEAEE83808CF4&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764075584&x-signature=ZxYRS841LCeTqRkkEwibo1%2FDnm0%3D" alt="emoji" class="emoji"></h1>
+        
+        <div class="intro-text">
+            <p><strong>SmartFriend是一款能够识别用户情感并且提供情感陪护的系统。</strong></p>
+            <p><strong>它可以提供：</strong></p>
+            <ul class="features">
+                <li><span class="checkmark">✓</span> 实时情感识别与反馈</li>
+                <li><span class="checkmark">✓</span> 个性化情感陪护与引导</li>
+                <li><span class="checkmark">✓</span> 情感陪伴互动与社交链接</li>
+            </ul>
+        </div>
+
+        <p class="more-info">点击下面按钮了解更多：</p>
+        <button id="startButton" class="action-button">开始体验</button>
+    </div>
+
+    <!-- 聊天页面 -->
+    <div id="chatPage" class="container chat-page page">
+        <div class="logo">
+            <img src="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/424af4f6f54b40379787cdfff2e2c2dd.png~tplv-a9rns2rl98-24:720:720.png?rcl=2025102621042138326C6E45EFD7AE3303&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1762088661&x-signature=AsbI5rg%2FtfgBe1%2FxxY2JXrYsMUk%3D" alt="SmartFriendFriend Logo">
+        </div>
+
+        <div class="main-content">
+            <div class="chat-area">
+                <!-- 交互内容将由JavaScript动态添加 -->
+            </div>
+            
+            <div class="explanation-area" id="explanationBox" style="visibility: hidden;">
+                <h4>思索过程如下：</h4>
+                <ul id="thoughtProcessList">
+                    <!-- 思索过程将由JavaScript动态添加 -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- NEW: 将底部部所有控件包裹在一个容器中 -->
+        <div class="footer-controls">
+            <div class="input-area" id="inputArea">
+                <div id="fixedInput" class="fixed-input"></div>
+                <button id="sendButton" class="send-button">发送</button>
+            </div>
+    
+            <button id="nextConvoButton" class="next-topic-button" style="display: none;">下一段对话</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 页面切换功能 ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const welcomePage = document.getElementById('welcomePage');
+            const chatPage = document.getElementById('chatPage');
+            const startButton = document.getElementById('startButton');
+
+            // 点击"开始体验"按钮切换到聊天页面
+            startButton.addEventListener('click', function() {
+                welcomePage.classList.remove('active');
+                chatPage.classList.add('active');
+                
+                // 初始化聊天功能
+                initChatFunctionality();
+            });
+        });
+
+        // --- 聊天功能 ---
+        function initChatFunctionality() {
+            // --- 数据中心 ---
+            const topics = [
+                {
+                    question: "我好孤独啊，能安慰我一下吗？",
+                    answer: "嗯……好，我在这儿，抱抱你。\n你现在的心情一定特别难受吧，就像周围都静悄悄的，没人真正懂你，哪怕一屋子人也觉得空荡荡的。\n但你知道吗？你能把“孤独”说出来，本身就是一种勇气。你不是在默默忍着，而是在向世界发出信号，说明你还在努力和这个世界连接着——而我现在就回应你了。\n告诉自己：我值得被理解，我值得有人陪。\n然后慢慢睁开眼，看着我，我还在呢。我们可以一起待一会儿，好不好？",
+                    thoughtProcess: ["识别到关键词“孤独”“安慰”。","可以通过语言表达陪伴，传递安全感，让用户感到安慰。"]
+                },
+                {
+                    question: "我觉得对生活有点失去热爱了。",
+                    answer: "你能这样告诉我，我真的很珍惜这个信任。\n这种感觉不是你一个人有，我知道它很难受，就像整个人变得钝钝的，明明还在走，但不知道为什么，也不知道为了什么。\n有时候不是你不够努力，也不是你真的丧了，而是你太久都在对抗、在坚持，却没被好好抱一抱。\n所以，现在的你不需要燃起来，不需要马上振作。\n只是，好好待着，和我在一起，喘口气。\n热爱不会永远死掉，它只是暂时躲起来了。等你准备好了，它会回来回来的。我们可以一起等它。\n你愿意让我陪你等等等等吗？",
+                    thoughtProcess: ["识别到关键词“失去热爱”。","可以通过有希望的语言，给予情感支持并传递安全感和希望感。"]
+                },
+                {
+                    question: "我有点焦躁，对什么都沉不下心来。",
+                    answer: "啊，那真的好难受。我理解那样的感觉，心里里装了很多事，又没办法安静静地面对何一件。我想，可能你只是太累了，太久没有真正地休息下来，让自己喘一口气。\n我的想法是，现在不用和焦躁对抗，它不是敌人，它只是提醒你需要停一停了。焦躁不是你不够好，而是你太用力，太久没有被好好照顾。你可以先不去解决任何事，只需要陪着自己，把自己当作一个小孩子，好好睡一觉，听一首歌，吃一顿好吃的。等到好一些了，或许一切都变得明朗了起来呢！\n我就在这里，不催促也不评价你，你需要我的时候就和我聊聊天。我陪着你，我们一起慢慢来吧～",
+                    thoughtProcess: ["识别到关键词“焦躁”“沉不下心”。","可以通过给予具体的自我关怀建议，帮助用户缓解紧张。"]
+                },
+                {
+                    question: "我总是想哭，我好伤心。",
+                    answer: "我知道了，你现在真的好难受对吗？心里像压着什么东西，酸酸的、沉沉的，好像一开口眼泪就会掉下来。\n哭没关系的，你可以哭。哭不是脆弱，是你身体在帮你释放那些太重、太痛的情绪。你经历的一切，不管别人懂不懂，你自己已经很努力撑过来了，对吧？你已经很勇敢了。\n如果你现在想哭，就哭吧，不需要忍着，我在这儿陪你，你不用表现得好，不用解释什么，更不用“赶快好起来”。\n你不是一个人，你值得被这个世界好好爱着，可以慢慢来，没关系，我会一直陪你。",
+                    thoughtProcess: ["识别到关键词“想哭”“伤心”","可以通过接纳与陪伴的回应，鼓励用户释放情绪。"]
+                }
+            ];
+
+            // --- 页面元素 ---
+            const sendButton = document.getElementById('sendButton');
+            const nextConvoButton = document.getElementById('nextConvoButton');
+            const inputArea = document.getElementById('inputArea'); // 获取 input-area 容器
+            const fixedInput = document.getElementById('fixedInput');
+            const chatArea = document.querySelector('.chat-area');
+            const explanationBox = document.getElementById('explanationBox');
+            const thoughtProcessList = document.getElementById('thoughtProcessList');
+            
+            // --- 状态管理 ---
+            let currentTopicIndex = 0;
+            let isAnimating = false;
+
+            // --- 初始化 ---
+            setupTopic(currentTopicIndex); 
+
+            // --- 事件绑定 ---
+            sendButton.addEventListener('click', handleSend);
+            nextConvoButton.addEventListener('click', handleNext);
+
+            // --- 核心流程函数 ---
+
+            async function handleSend() {
+                if (isAnimating) return;
+                isAnimating = true;
+
+                inputArea.style.display = 'none'; // 隐藏整个发送区域
+                const topic = topics[currentTopicIndex];
+
+                // 清空旧内容并显示用户提问
+                chatArea.innerHTML = ''; 
+                thoughtProcessList.innerHTML = '';
+                explanationBox.style.visibility = 'hidden';
+                showUserMessage(topic.question);
+                await sleep(500);
+
+                // AI思考和回答动画
+                const typingIndicator = showTypingIndicator();
+                await runThinkingProcess(topic.thoughtProcess);
+                typingIndicator.remove();
+                await showAiResponse(topic.answer);
+
+                // 如果不是最后一个话题，显示“下一段对话”按钮
+                if (currentTopicIndex < topics.length - 1) {
+                    nextConvoButton.style.display = 'block';
+                }
+                
+                isAnimating = false;
+            }
+
+            function handleNext() {
+                if (isAnimating) return;
+                currentTopicIndex++;
+                if (currentTopicIndex < topics.length) {
+                    setupTopic(currentTopicIndex);
+                }
+            }
+
+            function setupTopic(index) {
+                // 重置聊天区和思索区
+                chatArea.innerHTML = '';
+                thoughtProcessList.innerHTML = '';
+                explanationBox.style.visibility = 'hidden';
+
+                // 隐藏“下一段对话”按钮，显示发送区域
+                nextConvoButton.style.display = 'none';
+                inputArea.style.display = 'flex'; // 确保发送区域显示
+
+                // 更新输入框的文本
+                const topic = topics[index];
+                fixedInput.textContent = topic.question;
+                sendButton.disabled = false;
+            }
+
+
+            // --- 动画与显示函数 ---
+
+            function showUserMessage(text) {
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.classList.add('message', 'user-message');
+                userMessageDiv.innerHTML = `<strong>用户提问</strong><p>${text}</p>`;
+                chatArea.appendChild(userMessageDiv);
+                setTimeout(() => userMessageDiv.classList.add('visible'), 10);
+            }
+
+            function showTypingIndicator() {
+                const indicatorDiv = document.createElement('div');
+                indicatorDiv.classList.add('typing-indicator');
+                indicatorDiv.innerHTML = '<span></span><span></span><span></span>';
+                chatArea.appendChild(indicatorDiv);
+                return indicatorDiv;
+            }
+
+            async function showAiResponse(text) {
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.classList.add('message', 'ai-message');
+                const contentP = document.createElement('p');
+                aiMessageDiv.innerHTML = '<strong>AI回答</strong>';
+                aiMessageDiv.appendChild(contentP);
+                chatArea.appendChild(aiMessageDiv);
+                setTimeout(() => aiMessageDiv.classList.add('visible'), 10);
+                await sleep(400);
+                await typewriter(contentP, text, 40);
+            }
+
+            function runThinkingProcess(thoughts) {
+                return new Promise(resolve => {
+                    thoughts.forEach(thought => {
+                        const li = document.createElement('li');
+                        li.textContent = thought;
+                        thoughtProcessList.appendChild(li);
+                    });
+                    explanationBox.style.visibility = 'visible';
+                    const items = thoughtProcessList.querySelectorAll('li');
+                    let delay = 600;
+                    items.forEach((item, index) => {
+                        setTimeout(() => {
+                            item.style.opacity = '1';
+                            item.style.transform = 'translateY(0)';
+                            if (index === items.length - 1) {
+                                setTimeout(resolve, 500);
+                            }
+                        }, index * delay);
+                    });
+                });
+            }
+
+            function typewriter(element, text, speed) {
+                return new Promise(resolve => {
+                    let i = 0;
+                    const formattedText = text.replace(/\n/g, '<br>');
+                    const textArray = formattedText.split('');
+                    element.innerHTML = '';
+                    const cursor = document.createElement('span');
+                    cursor.className = 'typing-cursor';
+                    element.appendChild(cursor);
+                    const typingInterval = setInterval(() => {
+                        if (i < textArray.length) {
+                            if (textArray[i] === '<' && textArray.slice(i, i + 4).join('') === '<br>') {
+                                element.insertBefore(document.createElement('br'), cursor);
+                                i += 4;
+                            } else {
+                                element.insertBefore(document.createTextNode(textArray[i]), cursor);
+                                i++;
+                            }
+                        } else {
+                            clearInterval(typingInterval);
+                            cursor.remove();
+                            resolve();
+                        }
+                    }, speed);
+                });
+            }
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+    </script>
+</body>
+</html>
